@@ -13,7 +13,7 @@ JOBS: dict[str, dict] = {}   # {"<uid>__<repo>": {"status": ...}}
 
 
 def repo_key(uid: str, name: str) -> str:
-    """Har user ki repo ka apna unique naam: <uid>__<repo>."""
+    """Return a repository key unique to the user: <uid>__<repo>."""
     return f"{uid}__{name}"
 
 
@@ -29,7 +29,7 @@ def validate_url(url: str) -> str:
 
 
 def ingest_repo(url: str, name: str, uid: str) -> None:
-    """Background mein chalta hai: download, read, chunk, index."""
+    """Download, read, split, and index a repository in a background task."""
     key = repo_key(uid, name)
     path = None
     try:
@@ -42,7 +42,7 @@ def ingest_repo(url: str, name: str, uid: str) -> None:
             JOBS[key] = {"status": "failed", "error": "No supported code files were found."}
             return
 
-        for d in docs:                       # har chunk par owner ki mohar
+        for d in docs:                       # Tag every chunk with its owner.
             d.metadata["repo"] = key
             d.metadata["owner"] = uid
 
@@ -60,12 +60,12 @@ def ingest_repo(url: str, name: str, uid: str) -> None:
     except Exception as e:
         JOBS[key] = {"status": "failed", "error": str(e)[:300]}
     finally:
-        if path:                             # index ho gaya, ab download ki hui files ki zaroorat nahi
+        if path:                             # Remove the downloaded files after indexing.
             shutil.rmtree(path, ignore_errors=True)
 
 
 def _fetch_all(where: dict, page: int = 300):
-    """Saare matching records pages mein (cloud ki limits se bachne ke liye)."""
+    """Retrieve all matching records in pages to stay within cloud limits."""
     store = get_store()
     ids, metas, offset = [], [], 0
     while True:

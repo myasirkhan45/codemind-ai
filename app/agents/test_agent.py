@@ -1,7 +1,7 @@
 from collections import Counter
 from app.agents.base import retrieve, generate
 
-# Language ke hisaab se test framework
+# Test frameworks by programming language.
 TEST_FRAMEWORKS = {
     "python": "pytest",
     "js": "Jest",
@@ -42,15 +42,18 @@ Rules:
 
 def suggest_tests(task: str, file: str | None = None, repo: str | None = None,
                   k: int = 6) -> dict:
-    # 1. Chunks dhoondo
+    # 1. Retrieve relevant code chunks.
     docs = retrieve(task, k=k, file=file, repo=repo)
     if not docs:
-        return {"answer": "⚠️ Koi chunk nahi mila. File/repo ka naam check karo.", "sources": []}
+        return {
+            "answer": "No indexed code chunks were found. Check the repository and file name.",
+            "sources": [],
+        }
 
-    # 2. Sab se zyada kaun si language aayi? Wahi chuno
+    # 2. Select the language represented by the most retrieved chunks.
     lang = Counter(d.metadata["language"] for d in docs).most_common(1)[0][0]
     framework = TEST_FRAMEWORKS.get(lang, "the most common test framework for this language")
 
-    # 3. Prompt banao aur jawab lo
+    # 3. Build the prompt and generate the response.
     system = TEMPLATE.format(language=lang, framework=framework)
     return generate(system, task, docs)

@@ -8,20 +8,20 @@ _request = g_requests.Request()
 
 
 def get_user(authorization: str | None = Header(default=None)) -> str:
-    """Firebase token verify karta hai aur user ki uid return karta hai."""
+    """Verify the Firebase token and return the user's UID."""
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "Login zaroori hai.")
+        raise HTTPException(401, "Authentication is required.")
 
     token = authorization.split(" ", 1)[1]
     try:
         claims = id_token.verify_firebase_token(
             token, _request,
             audience=FIREBASE_PROJECT_ID,
-            clock_skew_in_seconds=10,   # PC ki ghari thori aage peeche ho to bhi chale
+            clock_skew_in_seconds=10,   # Allow minor clock differences between the client and server.
         )
     except Exception:
-        raise HTTPException(401, "Token galat ya expire hai. Dobara login karo.")
+        raise HTTPException(401, "The token is invalid or expired. Please sign in again.")
 
     if not claims or "sub" not in claims:
-        raise HTTPException(401, "Token galat hai.")
+        raise HTTPException(401, "The authentication token is invalid.")
     return claims["sub"]

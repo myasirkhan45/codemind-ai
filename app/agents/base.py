@@ -8,8 +8,8 @@ llm = ChatGroq(
     model="openai/gpt-oss-20b",
     api_key=GROQ_API_KEY,
     temperature=0,
-    max_tokens=8192,           # soch + jawab dono ke liye jagah
-    reasoning_effort="low",    # kam soch, zyada jawab
+    max_tokens=8192,           # Leave room for both reasoning and the answer.
+    reasoning_effort="low",    # Use less reasoning and prioritize the response.
 )
 FORMAT_RULES = """
 Formatting rules (Markdown):
@@ -23,7 +23,7 @@ Formatting rules (Markdown):
 """
 
 def format_docs(docs) -> str:
-    """Chunks ko jodta hai, har chunk par file ka naam."""
+    """Join retrieved chunks and label each one with its source file."""
     return "\n\n---\n\n".join(
         f"# FILE: {d.metadata['source']}\n{d.page_content}" for d in docs
     )
@@ -42,7 +42,7 @@ def retrieve(task: str, k: int = 6, file: str | None = None, repo: str | None = 
             return None
         return conds[0] if len(conds) == 1 else {"$and": conds}
 
-    # Windows (\) aur Linux (/) dono tarah ke path try karo
+    # Try both Windows (\) and Linux (/) path formats.
     variants = [file] if not file else list({file, file.replace("\\", "/"), file.replace("/", "\\")})
     for f in variants:
         docs = store.similarity_search(task, k=k, filter=make_filter(f))
@@ -66,7 +66,7 @@ def generate(system_prompt: str, task: str, docs) -> dict:
             "task": task + "\n\nIf the context is insufficient, say exactly what is missing.",
         })
     if not answer.strip():
-        answer = "⚠️ Model ne khali jawab diya. Task ko zyada specific likho."
+        answer = "The model returned an empty response. Please make the task more specific."
 
     return {"answer": answer, "sources": sorted({d.metadata["source"] for d in docs})}
 
@@ -75,5 +75,8 @@ def run_agent(system_prompt: str, task: str, k: int = 6,
               file: str | None = None, repo: str | None = None) -> dict:
     docs = retrieve(task, k, file, repo)
     if not docs:
-        return {"answer": "⚠️ Koi chunk nahi mila. File/repo ka naam check karo.", "sources": []}
+        return {
+            "answer": "No indexed code chunks were found. Check the repository and file name.",
+            "sources": [],
+        }
     return generate(system_prompt, task, docs)

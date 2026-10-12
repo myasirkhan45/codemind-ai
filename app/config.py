@@ -15,7 +15,7 @@ CHROMA_API_KEY = os.getenv("CHROMA_API_KEY")
 CHROMA_TENANT = os.getenv("CHROMA_TENANT")
 CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
 
-# Kaun si files padhni hain (values Language enum ke naam se match karti hain)
+# File extensions to process (values must match names in the Language enum).
 CODE_EXTENSIONS = {
     ".py": "python",
     ".js": "js",
@@ -31,7 +31,7 @@ CODE_EXTENSIONS = {
     ".c": "c",
 }
 
-# In folders ko skip karna hai
+# Directories to skip during repository scanning.
 IGNORE_DIRS = {
     ".git", "node_modules", "venv", ".venv", "__pycache__",
     "dist", "build", "tests", "docs", "examples",

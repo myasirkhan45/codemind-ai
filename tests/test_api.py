@@ -32,7 +32,7 @@ def test_explain_scopes_repo_to_user(monkeypatch, logged_in):
     monkeypatch.setattr(main, "explain", fake_agent)
     r = client.post("/explain", json={"task": "explain add_url_rule", "repo": "flask"})
     assert r.status_code == 200
-    assert calls["repo"] == "test-uid__flask"   # user ka data hi search hoga
+    assert calls["repo"] == "test-uid__flask"   # Retrieval is restricted to the authenticated user's data.
 
 
 def test_ingest_rejects_non_github_url(logged_in):

@@ -14,7 +14,7 @@ def show(title, result):
 
 
 show("EXPLAIN", explain("Explain how the add_url_rule method works", file=FILE, repo=REPO))
-time.sleep(20)   # Groq ki 8000 tokens/minute limit ke liye
+time.sleep(20)   # Stay within Groq's 8,000-token-per-minute limit.
 show("CHANGE", suggest_change("Add logging inside the add_url_rule method", file=FILE, repo=REPO))
 time.sleep(20)
 show("TEST", suggest_tests("Write tests for the add_url_rule method", file=FILE, repo=REPO))

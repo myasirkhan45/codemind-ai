@@ -22,8 +22,8 @@ def run_safely(fn, *args, **kwargs):
     except Exception as e:
         msg = str(e)
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "rate_limit" in msg.lower():
-            raise HTTPException(429, "Rate limit hit. 1 minute ruk kar dobara try karo.")
-        raise HTTPException(500, f"Error: {msg[:300]}")
+            raise HTTPException(429, "Rate limit exceeded. Wait one minute and try again.")
+        raise HTTPException(500, f"An error occurred: {msg[:300]}")
 
 
 @app.get("/")
@@ -45,7 +45,7 @@ def ingest(req: IngestRequest, bg: BackgroundTasks, uid: str = Depends(get_user)
 
     key = repo_key(uid, name)
     if JOBS.get(key, {}).get("status") in {"queued", "cloning", "reading", "indexing"}:
-        raise HTTPException(409, "Ye repo abhi index ho rahi hai.")
+        raise HTTPException(409, "This repository is already being indexed.")
 
     JOBS[key] = {"status": "queued"}
     bg.add_task(ingest_repo, req.url, name, uid)
@@ -56,7 +56,7 @@ def ingest(req: IngestRequest, bg: BackgroundTasks, uid: str = Depends(get_user)
 def ingest_status(name: str, uid: str = Depends(get_user)):
     job = JOBS.get(repo_key(uid, name))
     if not job:
-        raise HTTPException(404, "Is naam ka koi job nahi.")
+        raise HTTPException(404, "No ingestion job was found for this repository.")
     return job
 
 

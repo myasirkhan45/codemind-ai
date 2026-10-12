@@ -5,7 +5,7 @@ def get_splitter(lang: str):
     try:
         return RecursiveCharacterTextSplitter.from_language(
             Language(lang), chunk_size=1500, chunk_overlap=200, add_start_index=True)
-    except ValueError:   # language list mein nahi to generic splitter
+    except ValueError:   # Fall back to a generic splitter for unsupported languages.
         return RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=200, add_start_index=True)
 

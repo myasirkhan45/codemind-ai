@@ -10,14 +10,14 @@ from langchain_core.documents import Document
 from app.config import REPOS_DIR, CODE_EXTENSIONS, IGNORE_DIRS
 
 MAX_FILE_BYTES = 200_000
-MAX_ZIP_BYTES = 60 * 1024 * 1024         # download ki hadd
-MAX_UNZIPPED_BYTES = 250 * 1024 * 1024   # unzip ke baad ki hadd
+MAX_ZIP_BYTES = 60 * 1024 * 1024         # Maximum archive download size.
+MAX_UNZIPPED_BYTES = 250 * 1024 * 1024   # Maximum extracted archive size.
 
 GITHUB_RE = re.compile(r"^https://github\.com/([\w.-]+)/([\w.-]+?)(?:\.git)?/?$")
 
 
 def clone_repo(url: str) -> str:
-    """GitHub repo ko ZIP ki tarah download karke data/repos/ mein kholta hai."""
+    """Download a GitHub repository archive and extract it under data/repos/."""
     m = GITHUB_RE.match(url.strip())
     if not m:
         raise ValueError("Only https://github.com/<user>/<repo> URLs are supported.")
@@ -48,7 +48,7 @@ def clone_repo(url: str) -> str:
             raise ValueError("Repository is too large.")
         z.extractall(tmp)
 
-    # ZIP ke andar ek top-level folder hota hai, usay bahar nikalo
+    # Move the archive's top-level directory into the repository path.
     entries = os.listdir(tmp)
     root = os.path.join(tmp, entries[0]) if len(entries) == 1 else tmp
     shutil.move(root, path)

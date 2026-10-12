@@ -4,7 +4,7 @@ from app.vectorstore.chroma_store import index_chunks,search
 
 path = clone_repo("https://github.com/pallets/flask")
 docs = load_code_files(path)
-print("Files: ", len(docs))
+print("Files:", len(docs))
 
 chunks = split_docs(docs)
 print("Chunks: ", len(chunks))

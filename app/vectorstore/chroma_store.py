@@ -34,7 +34,7 @@ def get_store():
 
 
 def get_all(where=None, page=300):
-    """Saare matching records pages mein (cloud ki limits se bachne ke liye)."""
+    """Retrieve all matching records in pages to stay within cloud limits."""
     store = get_store()
     ids, metas, offset = [], [], 0
     while True:
