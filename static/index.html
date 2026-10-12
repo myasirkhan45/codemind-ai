@@ -210,6 +210,7 @@ form{display:flex;flex-direction:column;gap:14px;margin:0}
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Continue with Google
     </button>
+    <button class="btn" id="github-btn" type="button">Continue with GitHub</button>
     <div class="auth-foot"><button class="link" id="reset-btn" type="button">Forgot your password?</button></div>
   </div>
 </div>
@@ -229,13 +230,25 @@ form{display:flex;flex-direction:column;gap:14px;margin:0}
       </section>
 
       <section class="side-sec">
+        <h3>GitHub public repositories</h3>
+        <div class="stack">
+          <button class="btn" id="github-connect-btn" type="button">Connect GitHub</button>
+          <select class="input" id="github-repo" aria-label="Select a GitHub public repository" disabled>
+            <option value="">Connect GitHub to load repositories</option>
+          </select>
+          <button class="btn primary" id="github-import-btn" type="button" disabled>Index selected repository</button>
+        </div>
+        <div class="hint">Only public repositories are requested. GitHub access is used to list them.</div>
+      </section>
+
+      <section class="side-sec">
         <h3>Add a repository</h3>
         <div class="stack">
           <input class="input" id="url" placeholder="https://github.com/user/repo" aria-label="GitHub repository URL">
           <button class="btn primary" id="ingest-btn">Index repository</button>
         </div>
         <div class="status" id="status" hidden><span class="dot" id="status-dot"></span><span id="status-text"></span></div>
-        <div class="hint">Public GitHub repositories only.</div>
+        <div class="hint">You can also paste a public GitHub repository URL.</div>
       </section>
 
       <section class="side-sec">
@@ -300,7 +313,8 @@ form{display:flex;flex-direction:column;gap:14px;margin:0}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail
+  signOut, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, linkWithPopup,
+  reauthenticateWithPopup, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Paste your values from Firebase Console > Project settings > Your apps
@@ -345,6 +359,7 @@ const STATUS = {
 };
 const state = { mode: "ask", busy: false, history: [] };
 let pollTimer = null;
+let githubRepos = [];
 
 /* ---------- theme & toast ---------- */
 function setTheme(t) {
@@ -371,16 +386,21 @@ const AUTH_ERRORS = {
   "auth/weak-password": "Password must be at least 6 characters.",
   "auth/invalid-email": "Please enter a valid email address.",
   "auth/too-many-requests": "Too many attempts. Please try again later.",
-  "auth/popup-closed-by-user": "The Google sign-in window was closed before finishing.",
+  "auth/popup-closed-by-user": "The sign-in window was closed before finishing.",
   "auth/cancelled-popup-request": "Another sign-in window is already open.",
   "auth/popup-blocked": "Your browser blocked the sign-in popup. Allow popups for this site and try again.",
+  "auth/account-exists-with-different-credential": "This email already has an account with another sign-in method. Log in with that method, then connect GitHub from the sidebar.",
+  "auth/credential-already-in-use": "This GitHub account is linked to a different CodeMind account. Log out and continue with GitHub instead.",
   "auth/unauthorized-domain": "This domain is not authorized in Firebase. Open the app at http://localhost:8000, or add this domain under Authentication > Settings > Authorized domains.",
   "auth/operation-not-allowed": "This sign-in method is not enabled. Enable it in Firebase Console > Authentication > Sign-in method.",
   "auth/network-request-failed": "Network error. Check your connection and try again.",
   "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key in firebaseConfig is invalid.",
   "auth/invalid-api-key": "The Firebase API key in firebaseConfig is invalid.",
 };
-const authMsg = e => (AUTH_ERRORS[e.code] || "Something went wrong.") + (e.code ? ` (${e.code})` : "");
+const authMsg = e => {
+  if (AUTH_ERRORS[e.code]) return `${AUTH_ERRORS[e.code]} (${e.code})`;
+  return e.code ? `Something went wrong. (${e.code})` : (e.message || "Something went wrong.");
+};
 let signup = false;
 
 function setFormMsg(text, ok = false) {
@@ -390,6 +410,7 @@ function setFormMsg(text, ok = false) {
 function setAuthBusy(on) {
   $("auth-btn").disabled = on;
   $("google-btn").disabled = on;
+  $("github-btn").disabled = on;
 }
 function setAuthMode(isSignup) {
   signup = isSignup;
@@ -432,6 +453,35 @@ $("google-btn").onclick = async () => {
   finally { setAuthBusy(false); }
 };
 
+async function authorizeGithub() {
+  const provider = new GithubAuthProvider();
+  provider.addScope("read:user");
+  let result;
+  const user = auth.currentUser;
+  if (!user) {
+    result = await signInWithPopup(auth, provider);
+  } else if (user.providerData.some(p => p.providerId === "github.com")) {
+    result = await reauthenticateWithPopup(user, provider);
+  } else {
+    result = await linkWithPopup(user, provider);
+  }
+
+  const credential = GithubAuthProvider.credentialFromResult(result);
+  if (!credential?.accessToken) throw new Error("GitHub did not return an access token. Please try again.");
+  await loadGithubRepos(credential.accessToken);
+}
+
+$("github-btn").onclick = async () => {
+  setFormMsg("");
+  setAuthBusy(true);
+  try { await authorizeGithub(); }
+  catch (err) {
+    if (auth.currentUser) toast(authMsg(err), "err");
+    else setFormMsg(authMsg(err));
+  }
+  finally { setAuthBusy(false); }
+};
+
 $("reset-btn").onclick = async () => {
   const email = $("email").value.trim();
   if (!email) { setFormMsg("Enter your email above first."); return; }
@@ -452,10 +502,17 @@ onAuthStateChanged(auth, user => {
     $("who-name").textContent = name;
     $("who-mail").textContent = user.email || "";
     $("avatar-u").textContent = name[0].toUpperCase();
+    $("github-connect-btn").textContent = user.providerData.some(p => p.providerId === "github.com")
+      ? "Refresh GitHub repositories" : "Connect GitHub";
     setMode("ask");
     loadRepos();
   } else {
     state.history = [];
+    githubRepos = [];
+    $("github-repo").replaceChildren(new Option("Connect GitHub to load repositories", ""));
+    $("github-repo").disabled = true;
+    $("github-import-btn").disabled = true;
+    $("github-connect-btn").textContent = "Connect GitHub";
     clearInterval(pollTimer);
   }
 });
@@ -473,6 +530,53 @@ async function api(path, method = "GET", body) {
   if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Request failed (${r.status}).`);
   return data;
 }
+
+async function loadGithubRepos(accessToken) {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  const repos = [];
+  for (let page = 1; page <= 20; page++) {
+    const response = await fetch(
+      `https://api.github.com/user/repos?visibility=public&affiliation=owner,collaborator,organization_member&sort=updated&per_page=100&page=${page}`,
+      { headers },
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data.message || `GitHub request failed (${response.status}).`;
+      throw new Error(detail);
+    }
+    if (!Array.isArray(data)) throw new Error("GitHub returned an unexpected repository list.");
+    repos.push(...data.filter(repo => !repo.private));
+    if (data.length < 100) break;
+  }
+
+  githubRepos = repos;
+  const select = $("github-repo");
+  if (!repos.length) {
+    select.replaceChildren(new Option("No public repositories found", ""));
+    select.disabled = true;
+    $("github-import-btn").disabled = true;
+  } else {
+    select.replaceChildren(...repos.map(repo => {
+      const label = repo.language ? `${repo.full_name} · ${repo.language}` : repo.full_name;
+      return new Option(label, repo.full_name);
+    }));
+    select.disabled = false;
+    $("github-import-btn").disabled = false;
+  }
+  $("github-connect-btn").textContent = "Refresh GitHub repositories";
+  toast(`Loaded ${repos.length} public GitHub repositories.`, "ok");
+}
+
+$("github-connect-btn").onclick = async () => {
+  $("github-connect-btn").disabled = true;
+  try { await authorizeGithub(); }
+  catch (err) { toast(err.message || "Could not connect to GitHub.", "err"); }
+  finally { $("github-connect-btn").disabled = false; }
+};
 
 /* ---------- chat history (per user + repo, stored in this browser) ---------- */
 const histKey = () => {
@@ -500,7 +604,7 @@ async function loadRepos(selectName) {
       sel.replaceChildren(new Option("No repositories yet", ""));
       sel.disabled = true;
     } else {
-      sel.replaceChildren(...names.map(n => new Option(`${n} (${repos[n]} chunks)`, n)));
+      sel.replaceChildren(...names.map(n => new Option(`${n.replace("__", "/")} (${repos[n]} chunks)`, n)));
       sel.disabled = false;
       if (selectName && names.includes(selectName)) sel.value = selectName;
     }
@@ -522,24 +626,34 @@ function setStatus(key, extra = "") {
   $("status-text").textContent = label + extra;
 }
 
+async function startIngest(url) {
+  const r = await api("/ingest", "POST", { url });
+  setStatus("queued");
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const s = await api("/ingest/" + encodeURIComponent(r.repo));
+      setStatus(s.status, s.error ? ` ${s.error}` : (s.chunks ? ` (${s.chunks} chunks)` : ""));
+      if (s.status === "done" || s.status === "failed") {
+        clearInterval(pollTimer);
+        if (s.status === "done") { toast(`"${r.repo.replace("__", "/")}" is ready.`, "ok"); loadRepos(r.repo); }
+      }
+    } catch (e) { clearInterval(pollTimer); toast(e.message, "err"); }
+  }, 3000);
+}
+
 $("ingest-btn").onclick = async () => {
   const url = $("url").value.trim();
   if (!url) { toast("Paste a GitHub repository URL first.", "err"); return; }
-  try {
-    const r = await api("/ingest", "POST", { url });
-    setStatus("queued");
-    clearInterval(pollTimer);
-    pollTimer = setInterval(async () => {
-      try {
-        const s = await api("/ingest/" + encodeURIComponent(r.repo));
-        setStatus(s.status, s.error ? ` ${s.error}` : (s.chunks ? ` (${s.chunks} chunks)` : ""));
-        if (s.status === "done" || s.status === "failed") {
-          clearInterval(pollTimer);
-          if (s.status === "done") { toast(`"${r.repo}" is ready.`, "ok"); loadRepos(r.repo); }
-        }
-      } catch (e) { clearInterval(pollTimer); toast(e.message, "err"); }
-    }, 3000);
-  } catch (e) { toast(e.message, "err"); }
+  try { await startIngest(url); }
+  catch (e) { toast(e.message, "err"); }
+};
+
+$("github-import-btn").onclick = async () => {
+  const selected = githubRepos.find(repo => repo.full_name === $("github-repo").value);
+  if (!selected) { toast("Choose a GitHub repository first.", "err"); return; }
+  try { await startIngest(selected.html_url); }
+  catch (e) { toast(e.message, "err"); }
 };
 
 $("del-btn").onclick = async () => {

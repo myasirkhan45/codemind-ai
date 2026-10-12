@@ -18,14 +18,14 @@ def repo_key(uid: str, name: str) -> str:
 
 
 def validate_url(url: str) -> str:
-    """Sirf GitHub https URLs allow. Repo ka naam return karta hai."""
+    """Validate a GitHub URL and return an owner-qualified, URL-safe repo name."""
     m = GITHUB_RE.match(url.strip())
     if not m:
         raise ValueError("Only https://github.com/<user>/<repo> URLs are supported.")
-    name = m.group(2)
-    if name.startswith("."):
+    owner, name = m.groups()
+    if owner.startswith(".") or name.startswith("."):
         raise ValueError("Invalid repository name.")
-    return name
+    return f"{owner}__{name}"
 
 
 def ingest_repo(url: str, name: str, uid: str) -> None:
