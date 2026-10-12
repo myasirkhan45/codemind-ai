@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>
+  if (location.hostname === "127.0.0.1") {
+    location.replace(location.href.replace("127.0.0.1", "localhost"));
+  }
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodeMind AI</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("codemind-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+:root{--font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+:root[data-theme="dark"]{--bg:#0b0d12;--surface:#12151c;--surface-2:#181c25;--line:#232834;--text:#e9ebf1;--text-2:#a3abbd;--muted:#6f788c;--accent:#7c6cff;--accent-hover:#9183ff;--accent-soft:rgba(124,108,255,.14);--danger:#ff6b6b;--ok:#38d39f;--user-bg:#1d2230;--shadow:0 10px 40px rgba(0,0,0,.45)}
+:root[data-theme="light"]{--bg:#f5f6fa;--surface:#ffffff;--surface-2:#f0f2f7;--line:#e3e6ee;--text:#171a23;--text-2:#4a5266;--muted:#7a8296;--accent:#5b4bff;--accent-hover:#4a3ae6;--accent-soft:rgba(91,75,255,.10);--danger:#d93636;--ok:#12936a;--user-bg:#eceaff;--shadow:0 10px 40px rgba(25,35,70,.10)}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--font);font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--text)}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
+
+/* shared controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.sm{height:34px;padding:0 12px;font-size:13px}
+.btn.icon{width:34px;padding:0}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.input{width:100%;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);outline:none;transition:.15s}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.input::placeholder{color:var(--muted)}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#4aa3ff);color:#fff;font-size:18px;flex:none}
+.link{border:0;background:none;color:var(--accent);padding:0;font-size:13px}
+.link:hover{text-decoration:underline}
+
+/* auth */
+#auth-view{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(1000px 420px at 50% -10%,var(--accent-soft),transparent 60%),var(--bg)}
+.auth-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:32px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
+.auth-head h1{margin:0;font-size:24px;letter-spacing:-.02em}
+.auth-head p{margin:6px 0 0;color:var(--text-2);font-size:14px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--surface-2);border-radius:10px}
+.tab{height:34px;border:0;border-radius:8px;background:transparent;color:var(--text-2);font-weight:500}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+form{display:flex;flex-direction:column;gap:14px;margin:0}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--text-2)}
+.pw{position:relative}
+.pw .input{padding-right:64px}
+.pw button{position:absolute;right:6px;top:5px;height:30px;padding:0 10px;border:0;background:transparent;color:var(--text-2);border-radius:8px;font-size:13px}
+.form-msg{min-height:20px;font-size:13px;color:var(--danger);line-height:1.4}
+.form-msg.ok{color:var(--ok)}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px}
+.divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--line)}
+.auth-foot{display:flex;justify-content:center}
+
+/* app layout */
+#app-view{display:grid;grid-template-columns:300px minmax(0,1fr);height:100dvh}
+.sidebar{display:flex;flex-direction:column;min-height:0;background:var(--surface);border-right:1px solid var(--line)}
+.side-head{display:flex;align-items:center;gap:10px;padding:16px;font-weight:700;font-size:16px}
+.side-body{flex:1;min-height:0;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:24px}
+.side-sec h3{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;align-items:center}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.status{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text-2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.dot.busy{background:var(--accent);animation:pulse 1.2s infinite}.dot.ok{background:var(--ok)}.dot.err{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+.side-foot{border-top:1px solid var(--line);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.who-row{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar-u{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600;flex:none}
+.who{min-width:0;flex:1;line-height:1.3}
+.who b{display:block;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foot-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.main{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100dvh;min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.topbar .title{display:flex;align-items:center;gap:10px;font-weight:600;min-width:0}
+.badge{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1}
+.menu{display:none}
+.chat{overflow-y:auto;scroll-behavior:smooth}
+.thread{max-width:780px;margin:0 auto;padding:28px 20px 12px;display:flex;flex-direction:column;gap:28px}
+
+/* messages */
+.msg.user{display:flex;justify-content:flex-end}
+.user-col{display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:85%}
+.user-bubble{background:var(--user-bg);padding:10px 16px;border-radius:18px 18px 4px 18px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tag{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.msg.bot{display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px}
+.bot-av{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#4aa3ff);color:#fff;font-size:16px}
+.bot-col{min-width:0}
+.dots{display:flex;gap:5px;padding:10px 0}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+/* markdown */
+.md{overflow-wrap:anywhere;line-height:1.7}
+.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
+.md h1,.md h2,.md h3,.md h4{line-height:1.3;margin:1.5em 0 .5em;letter-spacing:-.01em}
+.md h1{font-size:1.4rem}.md h2{font-size:1.2rem;padding-bottom:6px;border-bottom:1px solid var(--line)}.md h3{font-size:1.05rem}
+.md p{margin:.7em 0}.md ul,.md ol{padding-left:1.5em;margin:.7em 0}.md li{margin:.3em 0}
+.md a{color:var(--accent)}
+.md :not(pre)>code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);border:1px solid var(--line);padding:1px 6px;border-radius:6px}
+.md blockquote{margin:1em 0;padding:6px 16px;border-left:3px solid var(--accent);background:var(--accent-soft);color:var(--text-2);border-radius:0 8px 8px 0}
+.md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.table-wrap{overflow-x:auto;margin:1em 0;border:1px solid var(--line);border-radius:10px}
+.md table{border-collapse:collapse;width:100%;font-size:.92em}
+.md th,.md td{padding:8px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.md th{background:var(--surface-2);font-weight:600}
+.md tr:last-child td{border-bottom:0}
+.codeblock{margin:1em 0;border:1px solid #262c38;border-radius:12px;overflow:hidden;background:#0d1117}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 14px;background:#151b24;color:#9aa4b5;font:12px var(--mono)}
+.code-head button{border:0;background:transparent;color:#9aa4b5;padding:4px 8px;border-radius:6px;font-size:12px}
+.code-head button:hover{background:#222a36;color:#fff}
+.codeblock pre{margin:0;padding:14px 16px;overflow-x:auto}
+.codeblock pre code{font-family:var(--mono);font-size:13px;line-height:1.6;background:none!important;border:0!important;padding:0!important}
+.hljs{background:transparent!important;padding:0!important}
+.sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{font:12px var(--mono);padding:4px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--line);color:var(--text-2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actions{display:flex;gap:4px;margin-top:10px}
+.act{border:0;background:transparent;color:var(--muted);padding:5px 8px;border-radius:8px;font-size:12px}
+.act:hover{background:var(--surface-2);color:var(--text)}
+
+/* welcome */
+.welcome{text-align:center;padding-top:7vh}
+.welcome .logo{width:56px;height:56px;font-size:28px;border-radius:16px;margin:0 auto 18px}
+.welcome h1{margin:0 0 8px;font-size:28px;letter-spacing:-.02em}
+.welcome p{margin:0 auto 28px;max-width:480px;color:var(--text-2)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card-s{display:flex;flex-direction:column;gap:6px;padding:16px;text-align:left;border-radius:14px;border:1px solid var(--line);background:var(--surface);transition:.15s}
+.card-s:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card-s b{font-size:14px}.card-s span{font-size:13px;color:var(--text-2)}
+
+/* composer */
+.composer{padding:8px 20px 16px}
+.composer-inner{max-width:780px;margin:0 auto}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 12px 10px;box-shadow:var(--shadow);transition:.15s}
+.box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.box textarea{display:block;width:100%;max-height:200px;padding:4px 6px 10px;border:0;outline:none;resize:none;background:transparent;line-height:1.5}
+.box textarea::placeholder{color:var(--muted)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.modes{display:flex;flex-wrap:wrap;gap:4px}
+.mode{height:30px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--text-2);font-size:13px;font-weight:500}
+.mode:hover{background:var(--surface-2)}
+.mode.active{background:var(--accent-soft);color:var(--accent)}
+.send{width:36px;height:36px;border:0;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
+.send:hover{background:var(--accent-hover)}.send:disabled{opacity:.4;cursor:not-allowed}
+.disclaimer{margin-top:10px;text-align:center;font-size:12px;color:var(--muted)}
+
+#toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;width:max-content;max-width:90vw}
+.toast{padding:10px 16px;border-radius:10px;font-size:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.toast.err{border-color:var(--danger)}.toast.ok{border-color:var(--ok)}
+
+.overlay{display:none}
+@media (max-width:900px){
+  #app-view{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:300px;z-index:30;transform:translateX(-100%);transition:transform .2s}
+  body.nav-open .sidebar{transform:none}
+  body.nav-open .overlay{display:block;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.5)}
+  .menu{display:inline-flex}
+  .topbar,.composer{padding-left:12px;padding-right:12px}
+  .thread{padding-left:14px;padding-right:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH ============ -->
+<div id="auth-view">
+  <div class="auth-card">
+    <div class="brand"><div class="logo">🧠</div>CodeMind AI</div>
+    <div class="auth-head">
+      <h1 id="auth-title">Welcome back</h1>
+      <p id="auth-sub">Log in to continue to CodeMind AI.</p>
+    </div>
+    <div class="tabs">
+      <button type="button" class="tab active" id="tab-login">Log in</button>
+      <button type="button" class="tab" id="tab-signup">Sign up</button>
+    </div>
+    <form id="auth-form" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw">
+          <input class="input" id="password" type="password" placeholder="At least 6 characters" autocomplete="current-password" required>
+          <button type="button" id="pw-toggle">Show</button>
+        </div>
+      </div>
+      <div class="form-msg" id="form-msg" role="alert"></div>
+      <button class="btn primary" id="auth-btn" type="submit">Log in</button>
+    </form>
+    <div class="divider">or</div>
+    <button class="btn" id="google-btn" type="button">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-foot"><button class="link" id="reset-btn" type="button">Forgot your password?</button></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app-view" hidden>
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head"><div class="logo">🧠</div>CodeMind AI</div>
+
+    <div class="side-body">
+      <section class="side-sec">
+        <h3>Repositories</h3>
+        <div class="row">
+          <select class="input" id="repo" aria-label="Select repository"></select>
+          <button class="btn icon" id="del-btn" title="Delete this repository" aria-label="Delete repository">🗑</button>
+        </div>
+      </section>
+
+      <section class="side-sec">
+        <h3>Add a repository</h3>
+        <div class="stack">
+          <input class="input" id="url" placeholder="https://github.com/user/repo" aria-label="GitHub repository URL">
+          <button class="btn primary" id="ingest-btn">Index repository</button>
+        </div>
+        <div class="status" id="status" hidden><span class="dot" id="status-dot"></span><span id="status-text"></span></div>
+        <div class="hint">Public GitHub repositories only.</div>
+      </section>
+
+      <section class="side-sec">
+        <h3>Focus on a file</h3>
+        <input class="input" id="file" placeholder="src/app/main.py" aria-label="File path">
+        <div class="hint">Optional. Limits answers to a single file.</div>
+      </section>
+    </div>
+
+    <div class="side-foot">
+      <div class="who-row">
+        <div class="avatar-u" id="avatar-u">?</div>
+        <div class="who"><b id="who-name"></b><span id="who-mail"></span></div>
+      </div>
+      <div class="foot-actions">
+        <button class="btn sm" id="theme-btn">Light mode</button>
+        <button class="btn sm" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="btn icon menu" id="menu-btn" aria-label="Open menu">☰</button>
+      <div class="title">Repository <span class="badge" id="repo-badge">None selected</span></div>
+      <div class="spacer"></div>
+      <button class="btn sm" id="clear-btn">Clear chat</button>
+    </header>
+
+    <div class="chat" id="chat"><div class="thread" id="thread"></div></div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="box">
+          <textarea id="q" rows="1" aria-label="Message"></textarea>
+          <div class="toolbar">
+            <div class="modes" id="modes">
+              <button class="mode active" data-mode="ask">💬 Ask</button>
+              <button class="mode" data-mode="explain">🔍 Explain</button>
+              <button class="mode" data-mode="change">✏️ Change</button>
+              <button class="mode" data-mode="tests">🧪 Tests</button>
+            </div>
+            <button class="send" id="send-btn" aria-label="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="disclaimer">CodeMind can make mistakes. Always review generated code and tests before using them.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// Paste your values from Firebase Console > Project settings > Your apps
+const firebaseConfig = {
+    apiKey: "AIzaSyB2JwqJ3oshWxoCNhsl2PfuJJSuIZ3l9h0",
+    authDomain: "codebaseassistant-2d455.firebaseapp.com",
+    projectId: "codebaseassistant-2d455",
+    storageBucket: "codebaseassistant-2d455.firebasestorage.app",
+    messagingSenderId: "139833010818",
+    appId: "1:139833010818:web:b4bcfad5a2eb857327629b",
+    measurementId: "G-TJ21YFNNZ2"
+};
+
+const auth = getAuth(initializeApp(firebaseConfig));
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
+
+const MODES = {
+  ask:     { label: "Ask",     ph: "Ask anything about this repository..." },
+  explain: { label: "Explain", ph: "What should I explain? e.g. how the routing decorator works" },
+  change:  { label: "Change",  ph: "Describe the change you want, e.g. add logging to the login handler" },
+  tests:   { label: "Tests",   ph: "What should I write tests for? e.g. the add_url_rule method" },
+};
+const SUGGESTIONS = [
+  { mode: "ask",     icon: "💬", title: "Ask a question",    text: "How is this project structured?" },
+  { mode: "explain", icon: "🔍", title: "Explain code",      text: "Explain how the main entry point works." },
+  { mode: "change",  icon: "✏️", title: "Suggest a change",  text: "Add input validation to the main request handler." },
+  { mode: "tests",   icon: "🧪", title: "Generate tests",    text: "Write unit tests for the core module." },
+];
+const STATUS = {
+  queued:   ["Queued...", "busy"],
+  cloning:  ["Cloning repository...", "busy"],
+  reading:  ["Reading files...", "busy"],
+  indexing: ["Indexing code (this can take a few minutes)...", "busy"],
+  done:     ["Ready to use", "ok"],
+  failed:   ["Indexing failed", "err"],
+};
+const state = { mode: "ask", busy: false, history: [] };
+let pollTimer = null;
+
+/* ---------- theme & toast ---------- */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("codemind-theme", t); } catch {}
+  $("theme-btn").textContent = t === "dark" ? "Light mode" : "Dark mode";
+}
+setTheme(document.documentElement.dataset.theme || "dark");
+$("theme-btn").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+function toast(msg, type = "") {
+  const t = el("div", "toast " + type, msg);
+  $("toasts").append(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+/* ---------- auth ---------- */
+const AUTH_ERRORS = {
+  "auth/invalid-credential": "Incorrect email or password.",
+  "auth/user-not-found": "No account found with this email.",
+  "auth/wrong-password": "Incorrect password.",
+  "auth/missing-password": "Please enter your password.",
+  "auth/email-already-in-use": "An account with this email already exists. Try logging in.",
+  "auth/weak-password": "Password must be at least 6 characters.",
+  "auth/invalid-email": "Please enter a valid email address.",
+  "auth/too-many-requests": "Too many attempts. Please try again later.",
+  "auth/popup-closed-by-user": "The Google sign-in window was closed before finishing.",
+  "auth/cancelled-popup-request": "Another sign-in window is already open.",
+  "auth/popup-blocked": "Your browser blocked the sign-in popup. Allow popups for this site and try again.",
+  "auth/unauthorized-domain": "This domain is not authorized in Firebase. Open the app at http://localhost:8000, or add this domain under Authentication > Settings > Authorized domains.",
+  "auth/operation-not-allowed": "This sign-in method is not enabled. Enable it in Firebase Console > Authentication > Sign-in method.",
+  "auth/network-request-failed": "Network error. Check your connection and try again.",
+  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key in firebaseConfig is invalid.",
+  "auth/invalid-api-key": "The Firebase API key in firebaseConfig is invalid.",
+};
+const authMsg = e => (AUTH_ERRORS[e.code] || "Something went wrong.") + (e.code ? ` (${e.code})` : "");
+let signup = false;
+
+function setFormMsg(text, ok = false) {
+  $("form-msg").textContent = text;
+  $("form-msg").classList.toggle("ok", ok);
+}
+function setAuthBusy(on) {
+  $("auth-btn").disabled = on;
+  $("google-btn").disabled = on;
+}
+function setAuthMode(isSignup) {
+  signup = isSignup;
+  $("tab-login").classList.toggle("active", !signup);
+  $("tab-signup").classList.toggle("active", signup);
+  $("auth-title").textContent = signup ? "Create your account" : "Welcome back";
+  $("auth-sub").textContent = signup ? "Sign up to start exploring codebases with AI." : "Log in to continue to CodeMind AI.";
+  $("auth-btn").textContent = signup ? "Create account" : "Log in";
+  $("password").autocomplete = signup ? "new-password" : "current-password";
+  setFormMsg("");
+}
+$("tab-login").onclick = () => setAuthMode(false);
+$("tab-signup").onclick = () => setAuthMode(true);
+
+$("pw-toggle").onclick = () => {
+  const show = $("password").type === "password";
+  $("password").type = show ? "text" : "password";
+  $("pw-toggle").textContent = show ? "Hide" : "Show";
+};
+
+$("auth-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  setFormMsg("");
+  setAuthBusy(true);
+  try {
+    const fn = signup ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
+    await fn(auth, $("email").value.trim(), $("password").value);
+  } catch (err) { setFormMsg(authMsg(err)); }
+  finally { setAuthBusy(false); }
+});
+
+$("google-btn").onclick = async () => {
+  setFormMsg("");
+  setAuthBusy(true);
+  try {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithPopup(auth, provider);
+  } catch (err) { setFormMsg(authMsg(err)); }
+  finally { setAuthBusy(false); }
+};
+
+$("reset-btn").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email) { setFormMsg("Enter your email above first."); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    setFormMsg("Password reset link sent. Check your inbox (and spam folder).", true);
+  } catch (err) { setFormMsg(authMsg(err)); }
+};
+
+$("logout-btn").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  $("auth-view").hidden = !!user;
+  $("app-view").hidden = !user;
+  document.body.classList.remove("nav-open");
+  if (user) {
+    const name = user.displayName || (user.email || "User").split("@")[0];
+    $("who-name").textContent = name;
+    $("who-mail").textContent = user.email || "";
+    $("avatar-u").textContent = name[0].toUpperCase();
+    setMode("ask");
+    loadRepos();
+  } else {
+    state.history = [];
+    clearInterval(pollTimer);
+  }
+});
+
+/* ---------- API ---------- */
+async function api(path, method = "GET", body) {
+  const token = await auth.currentUser.getIdToken();
+  const r = await fetch(path, {
+    method,
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401) { toast("Your session expired. Please log in again.", "err"); await signOut(auth); }
+  if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Request failed (${r.status}).`);
+  return data;
+}
+
+/* ---------- chat history (per user + repo, stored in this browser) ---------- */
+const histKey = () => {
+  const repo = $("repo").value;
+  return auth.currentUser && repo ? `codemind:${auth.currentUser.uid}:${repo}` : null;
+};
+function loadHistory() {
+  const k = histKey();
+  if (!k) return [];
+  try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; }
+}
+function saveHistory() {
+  const k = histKey();
+  if (!k) return;
+  try { localStorage.setItem(k, JSON.stringify(state.history.filter(h => !h.error).slice(-60))); } catch {}
+}
+
+/* ---------- repositories ---------- */
+async function loadRepos(selectName) {
+  try {
+    const repos = await api("/repos");
+    const names = Object.keys(repos).sort();
+    const sel = $("repo");
+    if (!names.length) {
+      sel.replaceChildren(new Option("No repositories yet", ""));
+      sel.disabled = true;
+    } else {
+      sel.replaceChildren(...names.map(n => new Option(`${n} (${repos[n]} chunks)`, n)));
+      sel.disabled = false;
+      if (selectName && names.includes(selectName)) sel.value = selectName;
+    }
+    onRepoChange();
+  } catch (e) { toast(e.message, "err"); }
+}
+function onRepoChange() {
+  const repo = $("repo").value;
+  $("repo-badge").textContent = repo || "None selected";
+  state.history = loadHistory();
+  render();
+}
+$("repo").addEventListener("change", onRepoChange);
+
+function setStatus(key, extra = "") {
+  const [label, kind] = STATUS[key] || [key, ""];
+  $("status").hidden = false;
+  $("status-dot").className = "dot " + kind;
+  $("status-text").textContent = label + extra;
+}
+
+$("ingest-btn").onclick = async () => {
+  const url = $("url").value.trim();
+  if (!url) { toast("Paste a GitHub repository URL first.", "err"); return; }
+  try {
+    const r = await api("/ingest", "POST", { url });
+    setStatus("queued");
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      try {
+        const s = await api("/ingest/" + encodeURIComponent(r.repo));
+        setStatus(s.status, s.error ? ` ${s.error}` : (s.chunks ? ` (${s.chunks} chunks)` : ""));
+        if (s.status === "done" || s.status === "failed") {
+          clearInterval(pollTimer);
+          if (s.status === "done") { toast(`"${r.repo}" is ready.`, "ok"); loadRepos(r.repo); }
+        }
+      } catch (e) { clearInterval(pollTimer); toast(e.message, "err"); }
+    }, 3000);
+  } catch (e) { toast(e.message, "err"); }
+};
+
+$("del-btn").onclick = async () => {
+  const name = $("repo").value;
+  if (!name || !confirm(`Delete all indexed data for "${name}"?`)) return;
+  try {
+    await api("/repos/" + encodeURIComponent(name), "DELETE");
+    try { localStorage.removeItem(`codemind:${auth.currentUser.uid}:${name}`); } catch {}
+    toast(`"${name}" deleted.`, "ok");
+    loadRepos();
+  } catch (e) { toast(e.message, "err"); }
+};
+
+/* ---------- markdown rendering ---------- */
+marked.setOptions({ breaks: true });
+
+function renderMarkdown(target, md) {
+  target.innerHTML = DOMPurify.sanitize(marked.parse(md));   // LLM output is untrusted: always sanitize
+
+  target.querySelectorAll("table").forEach(t => {
+    const wrap = el("div", "table-wrap");
+    t.replaceWith(wrap);
+    wrap.append(t);
+  });
+
+  target.querySelectorAll("pre").forEach(pre => {
+    const code = pre.querySelector("code");
+    if (code) hljs.highlightElement(code);
+    const lang = ((code && code.className.match(/language-([\w+#-]+)/)) || [])[1] || "code";
+    const block = el("div", "codeblock");
+    const head = el("div", "code-head");
+    const btn = el("button", "", "Copy");
+    btn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        btn.textContent = "Copied";
+      } catch { btn.textContent = "Failed"; }
+      setTimeout(() => (btn.textContent = "Copy"), 1500);
+    };
+    head.append(el("span", "", lang), btn);
+    pre.replaceWith(block);
+    block.append(head, pre);
+  });
+}
+
+/* ---------- chat rendering ---------- */
+const scrollBottom = () => { $("chat").scrollTop = $("chat").scrollHeight; };
+
+function buildWelcome() {
+  const box = el("div", "welcome");
+  const logo = el("div", "logo", "🧠");
+  box.append(logo);
+  if (!$("repo").value) {
+    box.append(el("h1", "", "Add a repository to get started"),
+               el("p", "", "Paste a public GitHub URL in the sidebar and click Index repository. Once it is ready, you can ask questions about the code."));
+    return box;
+  }
+  box.append(el("h1", "", "What would you like to understand?"),
+             el("p", "", "Ask questions, get code explained, request changes, or generate tests for this repository."));
+  const cards = el("div", "cards");
+  SUGGESTIONS.forEach(s => {
+    const c = el("button", "card-s");
+    c.type = "button";
+    c.append(el("b", "", `${s.icon} ${s.title}`), el("span", "", s.text));
+    c.onclick = () => { setMode(s.mode); $("q").value = s.text; autosize(); $("q").focus(); };
+    cards.append(c);
+  });
+  box.append(cards);
+  return box;
+}
+
+function drawUser(item) {
+  const row = el("div", "msg user");
+  const col = el("div", "user-col");
+  if (item.mode !== "ask") col.append(el("div", "tag", MODES[item.mode].label));
+  col.append(el("div", "user-bubble", item.text));
+  row.append(col);
+  return row;
+}
+
+function drawBot(item, isLast) {
+  const row = el("div", "msg bot");
+  row.append(el("div", "bot-av", "🧠"));
+  const col = el("div", "bot-col");
+  const md = el("div", "md");
+  renderMarkdown(md, item.content);
+  col.append(md);
+
+  if (item.sources && item.sources.length) {
+    const box = el("div", "sources");
+    item.sources.forEach(s => box.append(el("span", "chip", s)));
+    col.append(box);
+  }
+
+  const actions = el("div", "actions");
+  const copy = el("button", "act", "Copy");
+  copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(item.content); copy.textContent = "Copied"; }
+    catch { toast("Could not copy to clipboard.", "err"); }
+    setTimeout(() => (copy.textContent = "Copy"), 1500);
+  };
+  actions.append(copy);
+  if (isLast) {
+    const regen = el("button", "act", "Regenerate");
+    regen.onclick = regenerate;
+    actions.append(regen);
+  }
+  col.append(actions);
+  row.append(col);
+  return row;
+}
+
+function showTyping() {
+  const row = el("div", "msg bot");
+  row.append(el("div", "bot-av", "🧠"));
+  const d = el("div", "dots");
+  d.append(el("span"), el("span"), el("span"));
+  row.append(d);
+  $("thread").append(row);
+  scrollBottom();
+}
+
+function render() {
+  const box = $("thread");
+  box.replaceChildren();
+  if (!state.history.length) { box.append(buildWelcome()); return; }
+  state.history.forEach((item, i) => {
+    box.append(item.role === "user" ? drawUser(item) : drawBot(item, i === state.history.length - 1));
+  });
+  scrollBottom();
+}
+
+/* ---------- sending ---------- */
+function setMode(m) {
+  state.mode = m;
+  document.querySelectorAll(".mode").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  $("q").placeholder = MODES[m].ph;
+}
+document.querySelectorAll(".mode").forEach(b => (b.onclick = () => setMode(b.dataset.mode)));
+
+function setBusy(on) {
+  state.busy = on;
+  $("send-btn").disabled = on;
+  $("repo").disabled = on || !$("repo").value;
+}
+
+async function submit(text, mode, file, regen = false) {
+  const repo = $("repo").value;
+  if (state.busy) return;
+  if (!repo) { toast("Add and select a repository first.", "err"); return; }
+
+  setBusy(true);
+  if (regen) state.history.pop();
+  else state.history.push({ role: "user", text, mode, file });
+  render();
+  showTyping();
+
+  try {
+    const body = mode === "ask" ? { question: text } : { task: text };
+    body.repo = repo;
+    body.file = file || null;
+    const r = await api("/" + mode, "POST", body);
+    state.history.push({ role: "bot", content: r.answer, sources: r.sources, mode });
+  } catch (e) {
+    state.history.push({ role: "bot", content: `**Something went wrong.**\n\n${e.message}`, sources: [], mode, error: true });
+  } finally {
+    setBusy(false);
+    saveHistory();
+    render();
+  }
+}
+
+function send() {
+  const text = $("q").value.trim();
+  if (!text) return;
+  $("q").value = "";
+  autosize();
+  submit(text, state.mode, $("file").value.trim());
+}
+function regenerate() {
+  const lastUser = [...state.history].reverse().find(h => h.role === "user");
+  if (lastUser) submit(lastUser.text, lastUser.mode, lastUser.file, true);
+}
+
+$("send-btn").onclick = send;
+$("q").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+});
+function autosize() {
+  const q = $("q");
+  q.style.height = "auto";
+  q.style.height = Math.min(q.scrollHeight, 200) + "px";
+}
+$("q").addEventListener("input", autosize);
+
+$("clear-btn").onclick = () => {
+  if (!state.history.length || !confirm("Clear this conversation?")) return;
+  state.history = [];
+  saveHistory();
+  try { const k = histKey(); if (k) localStorage.removeItem(k); } catch {}
+  render();
+};
+
+/* ---------- mobile sidebar ---------- */
+$("menu-btn").onclick = () => document.body.classList.add("nav-open");
+$("overlay").onclick = () => document.body.classList.remove("nav-open");
+</script>
+</body>
+</html>
