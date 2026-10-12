@@ -11,6 +11,9 @@ CHROMA_DIR = "data/chroma_db"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
+CHROMA_API_KEY = os.getenv("CHROMA_API_KEY")
+CHROMA_TENANT = os.getenv("CHROMA_TENANT")
+CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
 
 # Kaun si files padhni hain (values Language enum ke naam se match karti hain)
 CODE_EXTENSIONS = {

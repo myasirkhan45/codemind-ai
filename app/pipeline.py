@@ -5,6 +5,7 @@ from collections import Counter
 from app.ingestion.loader import clone_repo, load_code_files
 from app.ingestion.chunker import split_docs
 from app.vectorstore.chroma_store import index_chunks, get_store
+from app.vectorstore.chroma_store import index_chunks, get_store, get_all
 
 GITHUB_RE = re.compile(r"^https://github\.com/([\w.-]+)/([\w.-]+?)(?:\.git)?/?$")
 MAX_CHUNKS = 800
@@ -78,15 +79,13 @@ def _fetch_all(where: dict, page: int = 300):
 
 
 def list_repos(uid: str) -> dict[str, int]:
-    """Is user ki repos aur har ke chunks ki ginti."""
-    _, metas = _fetch_all({"owner": uid})
-    return dict(Counter(m.get("repo", "").split("__", 1)[-1] for m in metas))
+    _, metas = get_all(where={"owner": uid})
+    return dict(Counter(m["repo"].split("__", 1)[1] for m in metas))
 
 
 def delete_repo(uid: str, name: str) -> int:
-    """Is user ki ek repo ka saara indexed data hata deta hai."""
     key = repo_key(uid, name)
-    ids, _ = _fetch_all({"$and": [{"owner": uid}, {"repo": key}]})
+    ids, _ = get_all(where={"$and": [{"owner": uid}, {"repo": key}]})
     store = get_store()
     for i in range(0, len(ids), 100):
         store.delete(ids=ids[i:i + 100])
